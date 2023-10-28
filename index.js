@@ -9,8 +9,10 @@ app.use(express.json());
 // Use the cors middleware to allow all origins
 app.use(cors());
 
-const { blogRoutes } = require("./routers");
+const { blogRoutes, userRoutes } = require("./routers");
 app.use("/blog", blogRoutes);
+app.use("/user", userRoutes);
+
 
 const port = process.env.PORT || 3000; // Use a default port if PORT is not defined in .env
 

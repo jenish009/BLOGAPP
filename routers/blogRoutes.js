@@ -6,6 +6,8 @@ router
     .post("/createBlogPost", blogController.createBlogPost)
     .get("/getAllBlogs", blogController.getAllBlogs)
     .get("/getBlogById", blogController.getBlogById)
+    .post("/addComment", blogController.addComment)
+
 
 
 

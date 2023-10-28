@@ -1,4 +1,4 @@
-const { blogModel } = require("../models");
+const { blogModel, userModel } = require("../models");
 const { google } = require("googleapis");
 const path = require("path");
 const multer = require("multer");
@@ -7,7 +7,8 @@ const upload = multer({ storage });
 const keyFile = path.join(__dirname + "/credential.json"); // Replace with the path to your downloaded JSON key file
 const { Readable } = require("stream"); // Import the stream module
 const sharp = require("sharp");
-const RSS = require("rss");
+const mongoose = require('mongoose');
+
 
 const auth = new google.auth.GoogleAuth({
     keyFile,
@@ -118,15 +119,91 @@ const createBlogPost = async (req, res) => {
 
 const getBlogById = async (req, res) => {
     try {
-        const blogs = await blogModel.findById(req.query.id).exec();
-        if (!blogs) {
-            return res.status(404).json({ error: "News not found" });
+        const blogId = req.query.id;
+        const pipeline = [
+            {
+                $match: { _id: new mongoose.Types.ObjectId(blogId) },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userComment.userId',
+                    foreignField: '_id',
+                    as: 'userDara',
+                },
+            },
+            {
+                $unwind: '$userDara',
+            },
+            {
+                $unwind: '$userComment', // Separate comments
+            },
+            {
+                $group: {
+                    _id: '$_id',
+                    title: { $first: '$title' },
+                    coverImage: { $first: '$coverImage' },
+                    content: { $first: '$content' },
+                    description: { $first: '$description' },
+                    category: { $first: '$category' },
+                    createdAt: { $first: '$createdAt' },
+                    userComment: {
+                        $push: {
+                            userId: '$userDara._id',
+                            name: '$userDara.name',
+                            text: '$userComment.text'
+                        }
+                    }
+                }
+            }
+        ];
+
+        const blog = await blogModel.aggregate(pipeline);
+
+        if (blog.length === 0) {
+            return res.status(404).send({ error: "News not found" });
         }
-        res.json(blogs);
+
+        res.json(blog);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).send({ error: error.message });
     }
 };
 
-module.exports = { getAllBlogs, createBlogPost, getBlogById };
+
+
+
+
+
+
+
+const addComment = async (req, res) => {
+    try {
+        const { blogId, text, userId } = req.body;
+
+        const blogPost = await blogModel.findById(blogId);
+
+        if (!blogPost) {
+            return res.status(404).json({ message: 'Blog post not found' });
+        }
+
+        // Create a new comment
+        const newComment = {
+            userId,
+            text,
+        };
+
+        // Add the comment to the blog post
+        blogPost.userComment.push(newComment);
+
+        // Save the updated blog post
+        await blogPost.save();
+
+        return res.status(201).json({ message: 'Comment added successfully', comment: newComment });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
+
+module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment };
