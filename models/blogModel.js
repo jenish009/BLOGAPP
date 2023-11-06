@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { ObjectId } = require('mongodb'); // or ObjectID 
 
 // Define the News schema
 const blogSchema = new mongoose.Schema(
@@ -27,7 +28,15 @@ const blogSchema = new mongoose.Schema(
             type: String,
         },
         userComment: {
-            type: Array
+            type: [
+                {
+                    userId: { type: ObjectId },
+                    text: { type: String }
+                }
+            ]
+        },
+        popularCount: {
+            type: Number
         }
     },
     { versionKey: false }

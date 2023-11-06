@@ -5,6 +5,8 @@ const { userController } = require("../controllers");
 router
     .post("/login", userController.login)
     .post("/signup", userController.signup)
+    .get("/getUserById", userController.getUserById)
+
 
 
 

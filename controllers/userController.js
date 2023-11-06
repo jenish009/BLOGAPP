@@ -61,10 +61,25 @@ const signup = async (req, res) => {
     }
 };
 
+const getUserById = async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) throw new Error("User not found")
+        let userData = await userModel.findById(id)
+        if (!userData) throw new Error("User not found")
+
+
+        return res.status(200).json({ data: userData });
+    } catch (error) {
+        console.error("error>>", error);
+        return res.status(500).json({ message: error.message });
+    }
+};
 const isValidEmail = () => {
     return true
 }
 module.exports = {
     login,
     signup,
+    getUserById
 };

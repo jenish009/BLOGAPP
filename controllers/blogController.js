@@ -39,12 +39,14 @@ const getAllBlogs = async (req, res) => {
 
         // Check if page and limit are not provided, and if so, don't use pagination
         if (!req.query.page && !req.query.limit) {
-            const news = await blogModel.find(query).sort({ _id: -1 }).exec();
+            const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
+            const news = await blogModel.find(query).sort(sortField).exec();
             res.status(200).json({ data: news });
         } else {
+            const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
             const news = await blogModel
                 .find(query)
-                .sort({ _id: -1 })
+                .sort(sortField)
                 .skip(skip)
                 .limit(limit)
                 .exec();
@@ -129,14 +131,59 @@ const getBlogById = async (req, res) => {
                     from: 'users',
                     localField: 'userComment.userId',
                     foreignField: '_id',
-                    as: 'userDara',
+                    as: 'userData',
                 },
             },
             {
-                $unwind: '$userDara',
+                $addFields: {
+                    userComment: {
+                        $filter: {
+                            input: '$userComment',
+                            as: 'comment',
+                            cond: { $ne: ['$$comment', []] },
+                        },
+                    },
+                },
             },
             {
-                $unwind: '$userComment', // Separate comments
+                $unwind: {
+                    path: '$userComment',
+                    preserveNullAndEmptyArrays: true, // Preserve documents with empty userComment array
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userComment.userId',
+                    foreignField: '_id',
+                    as: 'userComment.userData',
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    coverImage: 1,
+                    content: 1,
+                    description: 1,
+                    category: 1,
+                    createdAt: 1,
+                    popularCount: 1,
+                    userComment: {
+                        $cond: {
+                            if: { $eq: ['$userData', []] },
+                            then: {},
+                            else: {
+                                _id: '$userComment._id',
+                                userId: '$userComment.userId',
+                                name: {
+                                    $arrayElemAt: ['$userComment.userData.name', 0]
+                                },
+                                text: '$userComment.text'
+                            }
+                        }
+                    }
+                }
             },
             {
                 $group: {
@@ -147,16 +194,13 @@ const getBlogById = async (req, res) => {
                     description: { $first: '$description' },
                     category: { $first: '$category' },
                     createdAt: { $first: '$createdAt' },
-                    userComment: {
-                        $push: {
-                            userId: '$userDara._id',
-                            name: '$userDara.name',
-                            text: '$userComment.text'
-                        }
-                    }
+                    popularCount: { $first: '$popularCount' },
+                    userComment: { $push: '$userComment' }
                 }
             }
         ];
+
+
 
         const blog = await blogModel.aggregate(pipeline);
 
@@ -170,11 +214,6 @@ const getBlogById = async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 };
-
-
-
-
-
 
 
 
@@ -196,7 +235,7 @@ const addComment = async (req, res) => {
 
         // Add the comment to the blog post
         blogPost.userComment.push(newComment);
-
+        console.log(blogPost)
         // Save the updated blog post
         await blogPost.save();
 
