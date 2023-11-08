@@ -200,15 +200,22 @@ const getBlogById = async (req, res) => {
             }
         ];
 
-
-
         const blog = await blogModel.aggregate(pipeline);
 
         if (blog.length === 0) {
             return res.status(404).send({ error: "News not found" });
         }
 
-        res.json(blog);
+        // Increase popularCount by 1 in the database
+        await blogModel.updateOne(
+            { _id: blogId },
+            { $inc: { popularCount: 1 } }
+        );
+
+        // Fetch the updated blog with the increased popularCount
+        const updatedBlog = await blogModel.findById(blogId);
+
+        res.json(updatedBlog);
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: error.message });
