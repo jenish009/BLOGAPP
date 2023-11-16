@@ -1,4 +1,4 @@
-const { blogModel, userModel } = require("../models");
+const { blogModel } = require("../models");
 const { google } = require("googleapis");
 const path = require("path");
 const multer = require("multer");
@@ -6,7 +6,6 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const keyFile = path.join(__dirname + "/credential.json"); // Replace with the path to your downloaded JSON key file
 const { Readable } = require("stream"); // Import the stream module
-const sharp = require("sharp");
 const mongoose = require('mongoose');
 
 
@@ -24,6 +23,7 @@ const getAllBlogs = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10; // Set a default limit if not provided
         const skip = (page - 1) * limit; // Calculate the number of documents to skip
+        const isPopularpost = req.query.isPopularpost
 
         const query = {
             $or: [
@@ -40,11 +40,11 @@ const getAllBlogs = async (req, res) => {
         // Check if page and limit are not provided, and if so, don't use pagination
         if (!req.query.page && !req.query.limit) {
             const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
-            const news = await blogModel.find(query).sort(sortField).exec();
-            res.status(200).json({ data: news });
+            const blods = await blogModel.find(query).sort(sortField).exec();
+            res.status(200).json({ data: blods });
         } else {
             const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
-            const news = await blogModel
+            const blods = await blogModel
                 .find(query)
                 .sort(sortField)
                 .skip(skip)
@@ -52,7 +52,7 @@ const getAllBlogs = async (req, res) => {
                 .exec();
             const totalDocs = await blogModel.countDocuments(query);
             const totalPages = Math.ceil(totalDocs / limit);
-            res.status(200).json({ data: news, totalPages });
+            res.status(200).json({ data: blods, totalPages });
         }
     } catch (error) {
         console.error(error);
@@ -69,12 +69,9 @@ const createBlogPost = async (req, res) => {
             try {
                 const imageBuffer = req.file.buffer;
 
-                const compressedImageBuffer = await sharp(imageBuffer)
-                    .resize({ width: 800, height: 600 })
-                    .jpeg({ quality: 80 })
-                    .toBuffer();
 
-                const imageStream = Readable.from(compressedImageBuffer);
+
+                const imageStream = Readable.from(imageBuffer);
 
                 const { title, content, description, category, createdAt } = JSON.parse(
                     req.body.data
@@ -108,6 +105,47 @@ const createBlogPost = async (req, res) => {
 
                 await newBlog.save();
                 res.status(201).send({ message: "upload" });
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Error uploading to Google Drive" });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "Internal Server Error" });
+    }
+};
+const uploadImage = async (req, res) => {
+    try {
+        upload.single("image")(req, res, async (err) => {
+            if (err) {
+                return res.status(400).json({ error: "File upload failed" });
+            }
+            try {
+                const imageBuffer = req.file.buffer;
+
+                // No image size reduction logic here
+
+                const imageStream = Readable.from(imageBuffer);
+
+                const fileExtension = req.file.originalname.split(".").pop();
+                const filename = `image_${Date.now()}.${fileExtension}`;
+
+                const driveResponse = await drive.files.create({
+                    resource: {
+                        name: filename,
+                        mimeType: req.file.mimetype,
+                        parents: ["1zHrMQg0efUnNL2wohvvWmrqjJIx4iONU"],
+                    },
+                    media: {
+                        mimeType: req.file.mimetype,
+                        body: imageStream,
+                    },
+                });
+
+                const imageLink = `https://drive.google.com/uc?id=${driveResponse.data.id}`;
+
+                res.status(201).send({ URL: imageLink });
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ error: "Error uploading to Google Drive" });
@@ -167,6 +205,7 @@ const getBlogById = async (req, res) => {
                     content: 1,
                     description: 1,
                     category: 1,
+                    keywords: 1,
                     createdAt: 1,
                     popularCount: 1,
                     userComment: {
@@ -195,6 +234,7 @@ const getBlogById = async (req, res) => {
                     category: { $first: '$category' },
                     createdAt: { $first: '$createdAt' },
                     popularCount: { $first: '$popularCount' },
+                    keywords: { $first: '$keywords' },
                     userComment: { $push: '$userComment' }
                 }
             }
@@ -252,4 +292,4 @@ const addComment = async (req, res) => {
     }
 }
 
-module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment };
+module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage };

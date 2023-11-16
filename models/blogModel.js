@@ -12,6 +12,9 @@ const blogSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        keywords: {
+            type: Array,
+        },
         content: {
             type: Array,
             required: true,

@@ -7,6 +7,8 @@ router
     .get("/getAllBlogs", blogController.getAllBlogs)
     .get("/getBlogById", blogController.getBlogById)
     .post("/addComment", blogController.addComment)
+    .post("/uploadImage", blogController.uploadImage)
+
 
 
 
