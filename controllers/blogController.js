@@ -14,7 +14,7 @@ const RSS = require('rss');
 
 const generateRssFeed = async (req, res) => {
     try {
-        const blogs = await blogModel.find().sort({ createdAt: -1 }).limit(10); // Change the query as needed
+        const blogs = await blogModel.find().sort({ createdAt: -1 })// Change the query as needed
         const feed = new RSS();
 
         blogs.forEach(blog => {
