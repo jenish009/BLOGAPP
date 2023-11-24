@@ -4,11 +4,36 @@ const path = require("path");
 const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
-const keyFile = path.join(__dirname + "/credential.json"); // Replace with the path to your downloaded JSON key file
-const { Readable } = require("stream"); // Import the stream module
+const keyFile = path.join(__dirname + "/credential.json");
+const { Readable } = require("stream");
 const mongoose = require('mongoose');
+const RSS = require('rss');
 
 
+
+
+const generateRssFeed = async (req, res) => {
+    try {
+        const blogs = await blogModel.find().sort({ createdAt: -1 }).limit(10); // Change the query as needed
+        const feed = new RSS();
+
+        blogs.forEach(blog => {
+            feed.item({
+                title: blog.title,
+                description: blog.description,
+                url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
+                date: blog.createdAt,
+            });
+        });
+
+        const xml = feed.xml({ indent: true });
+        res.type('application/xml');
+        res.send(xml);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
 const auth = new google.auth.GoogleAuth({
     keyFile,
     scopes: ["https://www.googleapis.com/auth/drive"], // Adjust the scope as needed
@@ -73,7 +98,7 @@ const createBlogPost = async (req, res) => {
 
                 const imageStream = Readable.from(imageBuffer);
 
-                const { title, content, description, category, createdAt } = JSON.parse(
+                const { title, content, description, category, createdAt, keywords } = JSON.parse(
                     req.body.data
                 );
 
@@ -101,6 +126,7 @@ const createBlogPost = async (req, res) => {
                     category,
                     createdAt,
                     coverImage: imageLink,
+                    keywords
                 });
 
                 await newBlog.save();
@@ -292,4 +318,4 @@ const addComment = async (req, res) => {
     }
 }
 
-module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage };
+module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed };

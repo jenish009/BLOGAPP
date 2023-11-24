@@ -8,6 +8,8 @@ router
     .get("/getBlogById", blogController.getBlogById)
     .post("/addComment", blogController.addComment)
     .post("/uploadImage", blogController.uploadImage)
+    .get("/generateRssFeed", blogController.generateRssFeed)
+
 
 
 
