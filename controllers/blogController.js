@@ -14,8 +14,15 @@ const RSS = require('rss');
 
 const generateRssFeed = async (req, res) => {
     try {
-        const blogs = await blogModel.find().sort({ createdAt: -1 })// Change the query as needed
-        const feed = new RSS();
+        const blogs = await blogModel.find().sort({ createdAt: -1 }); // Change the query as needed
+        const feed = new RSS({
+            title: 'Bloggers Ground',
+            description: 'Get expert insights on finance, style inspiration, coding techniques, technology and travel tips from bloggersGround. Explore endless possibilities with us.',
+            feed_url: 'https://blogapp-q8b0.onrender.com/blog/generateRssFeed',
+            site_url: 'https://bloggersground.com',
+            image_url: 'https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB',
+
+        });
 
         blogs.forEach(blog => {
             feed.item({
@@ -23,6 +30,7 @@ const generateRssFeed = async (req, res) => {
                 description: blog.description,
                 url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
                 date: blog.createdAt,
+                categories: blog.category,
             });
         });
 
@@ -34,6 +42,7 @@ const generateRssFeed = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 const auth = new google.auth.GoogleAuth({
     keyFile,
     scopes: ["https://www.googleapis.com/auth/drive"], // Adjust the scope as needed
