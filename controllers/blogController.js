@@ -26,7 +26,9 @@ const generateRssFeed = async (req, res) => {
             feed_url: 'https://blogapp-q8b0.onrender.com/blog/generateRssFeed',
             site_url: 'https://bloggersground.com',
             image_url: 'https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB',
-
+            custom_namespaces: {
+                'media': 'https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB'
+            },
         });
 
         blogs.forEach(blog => {
@@ -36,6 +38,9 @@ const generateRssFeed = async (req, res) => {
                 url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
                 date: blog.createdAt,
                 categories: blog.category,
+                custom_elements: [
+                    { 'media:thumbnail': { _attr: { url: blog.coverImage } } }
+                ],
             });
         });
 
