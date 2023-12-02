@@ -9,6 +9,8 @@ router
     .post("/addComment", blogController.addComment)
     .post("/uploadImage", blogController.uploadImage)
     .get("/generateRssFeed", blogController.generateRssFeed)
+    .get("/resetCount", blogController.resetCount)
+
 
 
 

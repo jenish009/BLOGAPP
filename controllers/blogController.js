@@ -14,7 +14,12 @@ const RSS = require('rss');
 
 const generateRssFeed = async (req, res) => {
     try {
-        const blogs = await blogModel.find().sort({ createdAt: -1 }); // Change the query as needed
+        let { category } = req.query
+        let query = {}
+        if (category) {
+            query = { category: { $in: category } }
+        }
+        const blogs = await blogModel.find(query).sort({ createdAt: -1 }); // Change the query as needed
         const feed = new RSS({
             title: 'Bloggers Ground',
             description: 'Get expert insights on finance, style inspiration, coding techniques, technology and travel tips from bloggersGround. Explore endless possibilities with us.',
@@ -327,4 +332,14 @@ const addComment = async (req, res) => {
     }
 }
 
-module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed };
+const resetCount = async (req, res) => {
+    try {
+        await blogModel.updateMany({}, { $set: { popularCount: 0 } });
+
+        res.status(200).json({ message: 'PopularCount reset successfully for all blog posts.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed, resetCount };
