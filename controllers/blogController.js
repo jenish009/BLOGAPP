@@ -35,7 +35,7 @@ const generateRssFeed = async (req, res) => {
             feed.item({
                 title: blog.title,
                 description: blog.description,
-                url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
+                url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-')}?id=${blog._id}`, // Update with your blog post URL
                 date: blog.createdAt,
                 categories: blog.category,
                 custom_elements: [
