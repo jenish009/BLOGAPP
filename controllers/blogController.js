@@ -117,7 +117,7 @@ const createBlogPost = async (req, res) => {
 
                 const imageStream = Readable.from(imageBuffer);
 
-                const { title, content, description, category, createdAt, keywords } = JSON.parse(
+                const { title, content, description, category, createdAt, keywords, metaDescription } = JSON.parse(
                     req.body.data
                 );
 
@@ -145,7 +145,8 @@ const createBlogPost = async (req, res) => {
                     category,
                     createdAt,
                     coverImage: imageLink,
-                    keywords
+                    keywords,
+                    metaDescription
                 });
 
                 await newBlog.save();
@@ -253,6 +254,7 @@ const getBlogById = async (req, res) => {
                     keywords: 1,
                     createdAt: 1,
                     popularCount: 1,
+                    metaDescription: 1,
                     userComment: {
                         $cond: {
                             if: { $eq: ['$userData', []] },

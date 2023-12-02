@@ -8,6 +8,10 @@ const blogSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        metaDescription: {
+            type: String,
+            required: true,
+        },
         coverImage: {
             type: String,
             required: true,
