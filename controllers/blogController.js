@@ -14,38 +14,49 @@ const RSS = require('rss');
 
 const generateRssFeed = async (req, res) => {
     try {
-        let { category } = req.query
-        let query = {}
+        let { category } = req.query;
+        let query = {};
         if (category) {
-            query = { category: { $in: category } }
+            query = { category: { $in: category } };
         }
+
         const blogs = await blogModel.find(query).sort({ createdAt: -1 }); // Change the query as needed
+
         const feed = new RSS({
-            title: 'Bloggers Ground',
-            description: 'Get expert insights on finance, style inspiration, coding techniques, technology and travel tips from bloggersGround. Explore endless possibilities with us.',
-            feed_url: 'https://blogapp-q8b0.onrender.com/blog/generateRssFeed',
-            site_url: 'https://bloggersground.com',
-            image_url: 'https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB',
+            title: "Bloggers Ground",
+            description:
+                "Get expert insights on finance, style inspiration, coding techniques, technology and travel tips from bloggersGround. Explore endless possibilities with us.",
+            feed_url: "https://blogapp-q8b0.onrender.com/blog/generateRssFeed",
+            site_url: "https://bloggersground.com",
+            image_url: "https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB",
             custom_namespaces: {
-                'media': 'https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB'
+                media: "https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB",
             },
         });
 
-        blogs.forEach(blog => {
+        blogs.forEach((blog) => {
             feed.item({
                 title: blog.title,
                 description: blog.description,
-                url: `${process.env.FRONTEND_URL}/blog/${blog.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-')}?id=${blog._id}`, // Update with your blog post URL
+                url: `https://bloggersground.com/blog/${blog.title.toLowerCase().replace(/[^\w\s]/gi, "").replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
                 date: blog.createdAt,
                 categories: blog.category,
                 custom_elements: [
-                    { 'media:thumbnail': { _attr: { url: blog.coverImage } } }
+                    {
+                        "media:thumbnail": {
+                            _attr: {
+                                url: blog.coverImage,
+                                width: "300",
+                                height: "200",
+                            },
+                        },
+                    },
                 ],
             });
         });
 
         const xml = feed.xml({ indent: true });
-        res.type('application/xml');
+        res.type("application/xml");
         res.send(xml);
     } catch (error) {
         console.error(error);
