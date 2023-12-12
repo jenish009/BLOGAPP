@@ -27,7 +27,7 @@ const generateRssFeed = async (req, res) => {
             description:
                 "Get expert insights on finance, style inspiration, coding techniques, technology and travel tips from bloggersGround. Explore endless possibilities with us.",
             feed_url: "https://blogapp-q8b0.onrender.com/blog/generateRssFeed",
-            site_url: "https://bloggersground.com",
+            site_url: "https://www.bloggersground.com",
             image_url: "https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB",
             custom_namespaces: {
                 media: "https://drive.google.com/uc?id=1mFTAHt1IRc4OSqKRMbqIsRzO93kYJ5LB",
@@ -38,7 +38,7 @@ const generateRssFeed = async (req, res) => {
             feed.item({
                 title: blog.title,
                 description: blog.description,
-                url: `https://bloggersground.com/blog/${blog.title.toLowerCase().replace(/[^\w\s]/gi, "").replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
+                url: `https://www.bloggersground.com/blog/${blog.title.toLowerCase().replace(/[^\w\s]/gi, "").replace(/\s+/g, "-")}?id=${blog._id}`, // Update with your blog post URL
                 date: blog.createdAt,
                 categories: blog.category,
                 custom_elements: [
