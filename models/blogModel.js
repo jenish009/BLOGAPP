@@ -42,6 +42,9 @@ const blogSchema = new mongoose.Schema(
                 }
             ]
         },
+        relatedArtical: {
+            type: [ObjectId],
+        },
         popularCount: {
             type: Number
         }

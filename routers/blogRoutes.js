@@ -10,6 +10,12 @@ router
     .post("/uploadImage", blogController.uploadImage)
     .get("/generateRssFeed", blogController.generateRssFeed)
     .get("/resetCount", blogController.resetCount)
+    .get("/updateContentWithLinks", blogController.updateContentWithLinks)
+    .get("/removeLinksFromContent", blogController.removeLinksFromContent)
+    .get("/linkJson", blogController.linkJson)
+
+
+
 
 
 

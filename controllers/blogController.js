@@ -84,7 +84,8 @@ const getAllBlogs = async (req, res) => {
             $or: [
                 { title: { $regex: searchFilter, $options: "i" } },
                 { content: { $regex: searchFilter, $options: "i" } },
-                { author: { $regex: searchFilter, $options: "i" } },
+                { description: { $regex: searchFilter, $options: "i" } },
+                { category: { $regex: searchFilter, $options: "i" } },
             ],
         };
 
@@ -128,7 +129,7 @@ const createBlogPost = async (req, res) => {
 
                 const imageStream = Readable.from(imageBuffer);
 
-                const { title, content, description, category, createdAt, keywords, metaDescription } = JSON.parse(
+                const { title, content, description, category, createdAt, keywords, metaDescription, relatedArtical } = JSON.parse(
                     req.body.data
                 );
 
@@ -157,7 +158,8 @@ const createBlogPost = async (req, res) => {
                     createdAt,
                     coverImage: imageLink,
                     keywords,
-                    metaDescription
+                    metaDescription,
+                    relatedArtical
                 });
 
                 await newBlog.save();
@@ -255,6 +257,14 @@ const getBlogById = async (req, res) => {
                 },
             },
             {
+                $lookup: {
+                    from: 'blogs', // Assuming the related articles are in the 'blogs' collection
+                    localField: 'relatedArtical',
+                    foreignField: '_id',
+                    as: 'relatedArticles',
+                },
+            },
+            {
                 $project: {
                     _id: 1,
                     title: 1,
@@ -279,7 +289,17 @@ const getBlogById = async (req, res) => {
                                 text: '$userComment.text'
                             }
                         }
-                    }
+                    },
+                    relatedArticles: {
+                        $map: {
+                            input: '$relatedArticles',
+                            as: 'article',
+                            in: {
+                                _id: '$$article._id',
+                                title: '$$article.title',
+                            },
+                        },
+                    },
                 }
             },
             {
@@ -293,14 +313,14 @@ const getBlogById = async (req, res) => {
                     createdAt: { $first: '$createdAt' },
                     popularCount: { $first: '$popularCount' },
                     keywords: { $first: '$keywords' },
-                    userComment: { $push: '$userComment' }
+                    userComment: { $push: '$userComment' },
+                    relatedArticles: { $first: '$relatedArticles' },
                 }
             }
         ];
 
-        const blog = await blogModel.aggregate(pipeline);
-
-        if (blog.length === 0) {
+        const [blog] = await blogModel.aggregate(pipeline);
+        if (!blog) {
             return res.status(404).send({ error: "News not found" });
         }
 
@@ -310,15 +330,14 @@ const getBlogById = async (req, res) => {
             { $inc: { popularCount: 1 } }
         );
 
-        // Fetch the updated blog with the increased popularCount
-        const updatedBlog = await blogModel.findById(blogId);
 
-        res.json(updatedBlog);
+        res.json(blog);
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: error.message });
     }
 };
+
 
 
 
@@ -360,4 +379,68 @@ const resetCount = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
-module.exports = { getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed, resetCount };
+
+const updateContentWithLinks = async (req, res) => {
+    try {
+        const { url, keyword } = req.body;
+
+        // Replace keyword with link in the content of all blog entries
+        let data = await blogModel.find();
+        let updatedBlogIds = [];  // List to store updated blog entry IDs
+
+        // Use for...of loop to handle asynchronous operations
+        for (const obj of data) {
+            const regex = new RegExp(keyword, 'g');
+            const updatedContent = obj.content[0].replace(regex, `<a href="${url}">${keyword}</a>`);
+
+            // Check if content was updated
+            if (updatedContent !== obj.content[0]) {
+                obj.content[0] = updatedContent;
+                delete obj._id;
+                await blogModel.updateOne({ _id: obj._id }, obj);
+                updatedBlogIds.push(obj._id);  // Add the updated blog ID to the list
+            }
+        }
+
+        res.status(200).json({ data, updatedBlogIds });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+const removeLinksFromContent = async (req, res) => {
+    try {
+        const { keyword } = req.body;
+
+        // Remove <a> tags from the content of all blog entries
+        let data = await blogModel.find();
+        data.forEach(async (obj) => {
+            // Using new RegExp to create a dynamic regular expression with the 'g' flag
+            const regex = new RegExp(`<a href=[^>]*>${keyword}</a>`, 'g');
+            obj.content[0] = obj.content[0].replace(regex, keyword);
+            delete obj._id;
+            await blogModel.updateOne({ _id: obj._id }, { content: [obj.content[0]] });
+        });
+
+        res.status(200).json({ message: 'Links removed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+const linkJson = async (req, res) => {
+    try {
+        // Retrieve all blogs from the database
+        const blogs = await blogModel.find();
+
+        let data = blogs.map(obj => obj.title)
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+module.exports = { linkJson, removeLinksFromContent, getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed, resetCount, updateContentWithLinks };
