@@ -315,6 +315,7 @@ const getBlogById = async (req, res) => {
                     keywords: { $first: '$keywords' },
                     userComment: { $push: '$userComment' },
                     relatedArticles: { $first: '$relatedArticles' },
+                    metaDescription: { $first: '$metaDescription' },
                 }
             }
         ];
