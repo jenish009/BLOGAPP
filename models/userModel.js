@@ -9,11 +9,12 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            required: true,
         },
         name: {
             type: String, // Change this to String
-            required: true,
+        },
+        isGoogleId: {
+            type: Boolean, // Change this to String
         }
     },
     { versionKey: false, timestamps: true }

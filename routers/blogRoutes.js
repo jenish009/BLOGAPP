@@ -13,6 +13,7 @@ router
     .get("/updateContentWithLinks", blogController.updateContentWithLinks)
     .get("/removeLinksFromContent", blogController.removeLinksFromContent)
     .get("/linkJson", blogController.linkJson)
+    .get("/getBlogCategories", blogController.getBlogCategories)
 
 
 

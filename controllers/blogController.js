@@ -444,4 +444,14 @@ const linkJson = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-module.exports = { linkJson, removeLinksFromContent, getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed, resetCount, updateContentWithLinks };
+
+const getBlogCategories = async (req, res) => {
+    try {
+        const distinctCategories = await blogModel.distinct('category');
+        res.status(200).json({ categories: distinctCategories });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+module.exports = { getBlogCategories, linkJson, removeLinksFromContent, getAllBlogs, createBlogPost, getBlogById, addComment, uploadImage, generateRssFeed, resetCount, updateContentWithLinks };
