@@ -122,48 +122,72 @@ const createBlogPost = async (req, res) => {
             if (err) {
                 return res.status(400).json({ error: "File upload failed" });
             }
+
             try {
                 const imageBuffer = req.file.buffer;
-
-
-
                 const imageStream = Readable.from(imageBuffer);
 
-                const { title, content, description, category, createdAt, keywords, metaDescription, relatedArtical } = JSON.parse(
+                const { _id, title, content, description, category, createdAt, keywords, metaDescription, relatedArtical } = JSON.parse(
                     req.body.data
                 );
 
                 const fileExtension = req.file.originalname.split(".").pop();
                 const filename = `image_${Date.now()}.${fileExtension}`;
 
-                const driveResponse = await drive.files.create({
-                    resource: {
-                        name: filename,
-                        mimeType: req.file.mimetype,
-                        parents: ["1zHrMQg0efUnNL2wohvvWmrqjJIx4iONU"],
-                    },
-                    media: {
-                        mimeType: req.file.mimetype,
-                        body: imageStream,
-                    },
-                });
+                let imageLink;
 
-                const imageLink = `https://drive.google.com/uc?id=${driveResponse.data.id}`;
+                if (_id) {
+                    // If _id is provided, update the existing blog post
+                    const existingBlog = await blogModel.findOne({ _id });
+                    console.log("existingBlog", existingBlog, _id)
+                    if (!existingBlog) {
+                        return res.status(404).json({ error: "Blog not found" });
+                    }
 
-                const newBlog = new blogModel({
-                    title,
-                    content,
-                    description,
-                    category,
-                    createdAt,
-                    coverImage: imageLink,
-                    keywords,
-                    metaDescription,
-                    relatedArtical
-                });
+                    // Update only the fields that are provided in the request
+                    existingBlog.title = title || existingBlog.title;
+                    existingBlog.content = content || existingBlog.content;
+                    existingBlog.description = description || existingBlog.description;
+                    existingBlog.category = category || existingBlog.category;
+                    existingBlog.createdAt = createdAt || existingBlog.createdAt;
+                    existingBlog.keywords = keywords || existingBlog.keywords;
+                    existingBlog.metaDescription = metaDescription || existingBlog.metaDescription;
+                    existingBlog.relatedArtical = relatedArtical || existingBlog.relatedArtical;
 
-                await newBlog.save();
-                res.status(201).send({ message: "upload" });
+
+                    await existingBlog.save();
+                    res.status(200).send({ message: "Blog updated successfully" });
+                } else {
+                    // If _id is not provided, create a new blog post
+                    const driveResponse = await drive.files.create({
+                        resource: {
+                            name: filename,
+                            mimeType: req.file.mimetype,
+                            parents: ["1zHrMQg0efUnNL2wohvvWmrqjJIx4iONU"],
+                        },
+                        media: {
+                            mimeType: req.file.mimetype,
+                            body: imageStream,
+                        },
+                    });
+
+                    imageLink = `https://drive.google.com/uc?id=${driveResponse.data.id}`;
+
+                    const newBlog = new blogModel({
+                        title,
+                        content,
+                        description,
+                        category,
+                        createdAt,
+                        coverImage: imageLink,
+                        keywords,
+                        metaDescription,
+                        relatedArtical,
+                    });
+
+                    await newBlog.save();
+                    res.status(201).send({ message: "Blog created successfully" });
+                }
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ error: "Error uploading to Google Drive" });
@@ -174,6 +198,7 @@ const createBlogPost = async (req, res) => {
         res.status(500).send({ error: "Internal Server Error" });
     }
 };
+
 const uploadImage = async (req, res) => {
     try {
         upload.single("image")(req, res, async (err) => {

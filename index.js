@@ -11,9 +11,11 @@ app.use(express.json());
 // Use the cors middleware to allow all origins
 app.use(cors());
 
-const { blogRoutes, userRoutes } = require("./routers");
+const { blogRoutes, userRoutes, storyRoutes } = require("./routers");
 app.use("/blog", blogRoutes);
 app.use("/user", userRoutes);
+app.use("/story", storyRoutes);
+
 app.get(
     "/auth/google",
     passport.authenticate("google", {
