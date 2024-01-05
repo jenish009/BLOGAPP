@@ -27,7 +27,8 @@ const addUpdateStory = async (req, res) => {
                     storyTitle: stories.storyTitle,
                     storyDescription: stories.storyDescription,
                     url: stories.url,
-                    type: stories.type
+                    type: stories.type,
+                    swipeUpLink: stories.swipeUpLink
                 });
             }
 
@@ -47,20 +48,14 @@ const addUpdateStory = async (req, res) => {
                     storyTitle: stories.storyTitle,
                     storyDescription: stories.storyDescription,
                     url: stories.url,
-                    type: stories.type
+                    type: stories.type,
+                    swipeUpLink: stories.swipeUpLink
+
                 }], // Initialize with an empty array
                 createdAt,
                 popularCount,
             });
 
-            if (req.body.storyTitle && req.body.storyDescription && req.body.storyUrl) {
-                // Add a new element to the stories array
-                newStory.stories.push({
-                    storyTitle: req.body.storyTitle,
-                    storyDescription: req.body.storyDescription,
-                    url: req.body.storyUrl,
-                });
-            }
 
             await newStory.save();
             res.status(201).send({ message: "Story created successfully" });
