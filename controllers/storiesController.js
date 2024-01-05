@@ -21,7 +21,7 @@ const addUpdateStory = async (req, res) => {
             existingStory.category = category || existingStory.category;
             console.log("iffffff", stories)
 
-            if (stories.storyTitle && stories.storyDescription && stories.url) {
+            if (stories.url) {
                 // Add a new element to the stories array
                 existingStory.stories.push({
                     storyTitle: stories.storyTitle,
