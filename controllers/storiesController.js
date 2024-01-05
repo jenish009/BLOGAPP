@@ -97,7 +97,7 @@ const getAllStories = async (req, res) => {
             return res.status(404).json({ error: "Story not found" });
         }
 
-        res.json(story);
+        res.json({ data: story });
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: "Internal Server Error" });
