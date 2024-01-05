@@ -76,7 +76,10 @@ const getStoryById = async (req, res) => {
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
-
+        await storiesModel.updateOne(
+            { _id: storyId },
+            { $inc: { popularCount: 1 } }
+        );
         res.json(story);
     } catch (error) {
         console.error(error);
