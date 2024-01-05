@@ -27,6 +27,7 @@ const addUpdateStory = async (req, res) => {
                     storyTitle: stories.storyTitle,
                     storyDescription: stories.storyDescription,
                     url: stories.url,
+                    type: stories.type
                 });
             }
 
@@ -46,6 +47,7 @@ const addUpdateStory = async (req, res) => {
                     storyTitle: stories.storyTitle,
                     storyDescription: stories.storyDescription,
                     url: stories.url,
+                    type: stories.type
                 }], // Initialize with an empty array
                 createdAt,
                 popularCount,
