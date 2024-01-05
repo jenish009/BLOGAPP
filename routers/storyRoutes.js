@@ -5,6 +5,8 @@ const { storiesController } = require("../controllers");
 router
     .post("/addUpdateStory", storiesController.addUpdateStory)
     .get("/getStoryById", storiesController.getStoryById)
+    .get("/getAllStories", storiesController.getAllStories)
+
 
 
 

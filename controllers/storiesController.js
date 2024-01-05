@@ -86,5 +86,20 @@ const getStoryById = async (req, res) => {
         res.status(500).send({ error: "Internal Server Error" });
     }
 };
+const getAllStories = async (req, res) => {
+    try {
 
-module.exports = { getStoryById, addUpdateStory };
+        const story = await storiesModel.find();
+
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+
+        res.json(story);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "Internal Server Error" });
+    }
+};
+
+module.exports = { getStoryById, addUpdateStory, getAllStories };
