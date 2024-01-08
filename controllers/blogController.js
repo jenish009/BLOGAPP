@@ -322,6 +322,8 @@ const getBlogById = async (req, res) => {
                             in: {
                                 _id: '$$article._id',
                                 title: '$$article.title',
+                                coverImage: '$$article.coverImage',
+
                             },
                         },
                     },
