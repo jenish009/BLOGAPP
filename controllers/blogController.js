@@ -245,6 +245,7 @@ const uploadImage = async (req, res) => {
 const getBlogById = async (req, res) => {
     try {
         const blogId = req.query.id;
+
         const pipeline = [
             {
                 $match: { _id: new mongoose.Types.ObjectId(blogId) },
@@ -271,7 +272,7 @@ const getBlogById = async (req, res) => {
             {
                 $unwind: {
                     path: '$userComment',
-                    preserveNullAndEmptyArrays: true, // Preserve documents with empty userComment array
+                    preserveNullAndEmptyArrays: true,
                 },
             },
             {
@@ -284,7 +285,7 @@ const getBlogById = async (req, res) => {
             },
             {
                 $lookup: {
-                    from: 'blogs', // Assuming the related articles are in the 'blogs' collection
+                    from: 'blogs',
                     localField: 'relatedArtical',
                     foreignField: '_id',
                     as: 'relatedArticles',
@@ -309,9 +310,7 @@ const getBlogById = async (req, res) => {
                             else: {
                                 _id: '$userComment._id',
                                 userId: '$userComment.userId',
-                                name: {
-                                    $arrayElemAt: ['$userComment.userData.name', 0]
-                                },
+                                name: { $arrayElemAt: ['$userComment.userData.name', 0] },
                                 text: '$userComment.text'
                             }
                         }
@@ -324,31 +323,23 @@ const getBlogById = async (req, res) => {
                                 _id: '$$article._id',
                                 title: '$$article.title',
                                 coverImage: '$$article.coverImage',
-
                             },
                         },
                     },
                 }
             },
             {
-                $group: {
-                    _id: '$_id',
-                    title: { $first: '$title' },
-                    coverImage: { $first: '$coverImage' },
-                    content: { $first: '$content' },
-                    description: { $first: '$description' },
-                    category: { $first: '$category' },
-                    createdAt: { $first: '$createdAt' },
-                    popularCount: { $first: '$popularCount' },
-                    keywords: { $first: '$keywords' },
-                    userComment: { $push: '$userComment' },
-                    relatedArticles: { $first: '$relatedArticles' },
-                    metaDescription: { $first: '$metaDescription' },
+                $merge: {
+                    into: 'tempBlog',
+                    whenMatched: 'merge',
+                    whenNotMatched: 'insert'
                 }
             }
         ];
 
-        const [blog] = await blogModel.aggregate(pipeline);
+        await blogModel.aggregate(pipeline);
+
+        const blog = await blogModel.findOne({ _id: new mongoose.Types.ObjectId(blogId) });
         if (!blog) {
             return res.status(404).send({ error: "News not found" });
         }
@@ -359,13 +350,13 @@ const getBlogById = async (req, res) => {
             { $inc: { popularCount: 1 } }
         );
 
-
         res.json(blog);
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: error.message });
     }
 };
+
 
 
 
