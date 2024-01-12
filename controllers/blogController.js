@@ -74,7 +74,13 @@ const drive = google.drive({ version: "v3", auth });
 const getAllBlogs = async (req, res) => {
     try {
         const { searchFilter = "", categoryFilter = "", page = 1, limit = 10, isPopularpost } = req.query;
-        const skip = (page - 1) * limit;
+
+        let skip = 0;
+        let queryLimit = limit ? parseInt(limit, 10) : 0; // Use provided limit or default to 0 for no limit
+
+        if (page && queryLimit) {
+            skip = (page - 1) * queryLimit;
+        }
 
         const query = {
             $or: [
@@ -100,20 +106,28 @@ const getAllBlogs = async (req, res) => {
             createdAt: 1,
         };
 
-        // Fetch blods, totalDocs, and totalPages in parallel
-        const [blods, totalDocs] = await Promise.all([
-            blogModel.find(query).select(projection).sort(sortField).skip(skip).limit(limit).exec(),
-            blogModel.countDocuments(query),
-        ]);
+        // Fetch blogs, totalDocs, and totalPages in parallel
+        if (req.query.limit) {
+            const [blogs, totalDocs] = await Promise.all([
+                blogModel.find(query).select(projection).sort(sortField).skip(skip).limit(queryLimit).exec(),
+                blogModel.countDocuments(query),
+            ]);
+            const totalPages = Math.ceil(totalDocs / queryLimit);
 
-        const totalPages = Math.ceil(totalDocs / limit);
+            res.status(200).json({ data: blogs, totalPages });
+        } else {
+            const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
+            const blods = await blogModel.find(query).sort(sortField).exec();
+            res.status(200).json({ data: blods });
+        }
 
-        res.status(200).json({ data: blods, totalPages });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 
