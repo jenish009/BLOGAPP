@@ -73,12 +73,8 @@ const drive = google.drive({ version: "v3", auth });
 
 const getAllBlogs = async (req, res) => {
     try {
-        const searchFilter = req.query.searchFilter || "";
-        const categoryFilter = req.query.categoryFilter || "";
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10; // Set a default limit if not provided
-        const skip = (page - 1) * limit; // Calculate the number of documents to skip
-        const isPopularpost = req.query.isPopularpost
+        const { searchFilter = "", categoryFilter = "", page = 1, limit = 10, isPopularpost } = req.query;
+        const skip = (page - 1) * limit;
 
         const query = {
             $or: [
@@ -93,28 +89,33 @@ const getAllBlogs = async (req, res) => {
             query.category = { $in: categoryFilter.split(',') };
         }
 
-        // Check if page and limit are not provided, and if so, don't use pagination
-        if (!req.query.page && !req.query.limit) {
-            const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
-            const blods = await blogModel.find(query).sort(sortField).exec();
-            res.status(200).json({ data: blods });
-        } else {
-            const sortField = req.query.isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
-            const blods = await blogModel
-                .find(query)
-                .sort(sortField)
-                .skip(skip)
-                .limit(limit)
-                .exec();
-            const totalDocs = await blogModel.countDocuments(query);
-            const totalPages = Math.ceil(totalDocs / limit);
-            res.status(200).json({ data: blods, totalPages });
-        }
+        const sortField = isPopularpost === "true" ? { popularCount: -1 } : { _id: -1 };
+
+        const projection = {
+            title: 1,
+            _id: 1,
+            coverImage: 1,
+            description: 1,
+            category: 1,
+            createdAt: 1,
+        };
+
+        // Fetch blods, totalDocs, and totalPages in parallel
+        const [blods, totalDocs] = await Promise.all([
+            blogModel.find(query).select(projection).sort(sortField).skip(skip).limit(limit).exec(),
+            blogModel.countDocuments(query),
+        ]);
+
+        const totalPages = Math.ceil(totalDocs / limit);
+
+        res.status(200).json({ data: blods, totalPages });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+
 
 const createBlogPost = async (req, res) => {
     try {
