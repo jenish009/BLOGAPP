@@ -475,7 +475,7 @@ const linkJson = async (req, res) => {
 
 const getBlogCategories = async (req, res) => {
     try {
-        const distinctCategories = await blogModel.distinct('category');
+        const distinctCategories = await blogModel.find().distinct('category').lean();
         res.status(200).json({ categories: distinctCategories });
     } catch (error) {
         console.error(error);
